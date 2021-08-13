@@ -16,6 +16,16 @@ public class SimpleState implements State {
 	public String id;
 
 	/**
+	 * Constructor. Id is taken from Action
+	 * @param action to be executed
+	 */
+	public SimpleState(Action action) {
+		super();
+		this.action = action;
+		this.id = action.getActionId();
+	}
+	
+	/**
 	 * Constructor
 	 * @param id of the state
 	 * @param action to be executed
