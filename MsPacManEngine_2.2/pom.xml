@@ -129,6 +129,21 @@
             <artifactId>slf4j-simple</artifactId>
             <version>1.7.21</version>
         </dependency>
+        <dependency>
+        	<groupId>org.graphstream</groupId>
+        	<artifactId>gs-core</artifactId>
+        	<version>2.0</version>
+        </dependency>
+        <dependency>
+        	<groupId>org.graphstream</groupId>
+        	<artifactId>gs-ui-swing</artifactId>
+        	<version>2.0</version>
+        </dependency>
+        <dependency>
+  			<groupId>es.ucm.fdi.gaia</groupId>
+  			<artifactId>jCOLIBRI</artifactId>
+  			<version>3.2</version>
+  	    </dependency>
     </dependencies>
     <url>http://gaia.fdi.ucm.es</url>
     <description>MsPacManEngine</description>
