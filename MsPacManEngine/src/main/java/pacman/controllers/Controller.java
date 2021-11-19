@@ -17,7 +17,7 @@ public abstract class Controller<T> implements Runnable {
     private long timeDue;
     private Game game;
     private String name = "Unknown Controller";
-
+    private String team = "Unknown Team";
     /**
      * Instantiates a new controller. The constructor initialises the class variables.
      */
@@ -126,7 +126,7 @@ public abstract class Controller<T> implements Runnable {
      * @return The name of the controller
      */
     public String getName() {
-        return name;
+        	return name;
     }
 
     /**
@@ -138,7 +138,15 @@ public abstract class Controller<T> implements Runnable {
         this.name = name;
     }
     
-    public void preCompute(String opponent) {
+    public String getTeam() {
+        	return team;
+	}
+
+	public void setTeam(String team) {
+		this.team = team;
+	}
+
+	public void preCompute(String opponent) {
     	//System.out.println("Precompute. Oponent: "+opponent);
     }
     
