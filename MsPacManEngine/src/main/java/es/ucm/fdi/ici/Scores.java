@@ -32,7 +32,7 @@ public class Scores {
 		if((posPacMan ==-1)||(posGhosts==-1))
 			System.err.println("error");
 		stats[posPacMan][posGhosts] = score;	
-		System.out.println(String.format("Scores.put %s, %s, %s",pacMan,ghosts,score.toString()));
+		//System.out.println(String.format("Scores.put %s, %s, %s",pacMan,ghosts,score.toString()));
 		computeRanking();
 	}
 	
