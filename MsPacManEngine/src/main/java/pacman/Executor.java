@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.Random;
 import java.util.function.Function;
 
@@ -20,9 +21,11 @@ import org.slf4j.LoggerFactory;
 import pacman.controllers.Controller;
 import pacman.controllers.GhostController;
 import pacman.controllers.HumanController;
+import pacman.game.Constants.GHOST;
 import pacman.game.Constants.MOVE;
 import pacman.game.Drawable;
 import pacman.game.Game;
+import pacman.game.GameObserver;
 import pacman.game.GameView;
 import pacman.game.comms.BasicMessenger;
 import pacman.game.comms.Messenger;
@@ -621,5 +624,57 @@ public class Executor {
                 gv.repaint();
             }
         }
+    }
+    
+    
+    /**
+     * Run a game in asynchronous mode and notifies observer: the game waits until a move is returned. In order to slow thing down in case
+     * the controllers return very quickly, a time limit can be used. If fasted gameplay is required, this delay
+     * should be put as 0.
+     *
+     * @param pacManController The Pac-Man controller
+     * @param ghostController  The Ghosts controller
+     * @param delay            The delay between time-steps
+     */
+    public int runGame(Controller<MOVE> pacManController, GhostController ghostController, int delay, GameObserver observer) {
+        Game game = setupGame();
+
+        precompute(pacManController, ghostController);
+        
+        GameView gv = (visuals) ? setupGameView(pacManController, game) : null;
+
+        GhostController ghostControllerCopy = ghostController.copy(ghostPO);
+
+        while (!game.gameOver()) {
+            if (tickLimit != -1 && tickLimit < game.getTotalTime()) {
+                break;
+            }
+            handlePeek(game);
+            MOVE pacManMove = pacManController.getMove(getPacmanCopy(game), System.currentTimeMillis() + timeLimit);
+            EnumMap<GHOST,MOVE> ghostsMove = ghostControllerCopy.getMove(getGhostsCopy(game), System.currentTimeMillis() + timeLimit);
+            
+            EnumMap<GHOST,Boolean> ghostsJunction = new EnumMap<GHOST,Boolean>(GHOST.class);
+            for(GHOST g: GHOST.values())
+            	ghostsJunction.put(g, game.isJunction(game.getGhostCurrentNodeIndex(g)));
+            observer.ghostsMove(ghostsMove, ghostsJunction);
+            
+            observer.pacManMove(pacManMove, game.isJunction(game.getPacmanCurrentNodeIndex()));
+            
+            game.advanceGame(pacManMove, ghostsMove);
+
+            try {
+                Thread.sleep(delay);
+            } catch (Exception e) {
+            }
+
+            if (visuals) {
+                gv.repaint();
+            }
+        }
+        System.out.println(game.getScore());
+        
+        postcompute(pacManController, ghostController);
+        
+        return game.getScore();
     }
 }
