@@ -28,8 +28,8 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="lib/jFuzzyLogic.jar"/>
-	<classpathentry kind="lib" path="lib/jess.jar"/>
-	<classpathentry kind="lib" path="lib/jsr94.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/jFuzzyLogic.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/jess.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/jsr94.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
