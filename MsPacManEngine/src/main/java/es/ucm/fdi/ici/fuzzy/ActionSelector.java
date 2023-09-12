@@ -8,3 +8,5 @@ public interface ActionSelector {
 
 	public abstract Action selectAction(HashMap<String, Double> fuzzyOutput);
 }
+
+

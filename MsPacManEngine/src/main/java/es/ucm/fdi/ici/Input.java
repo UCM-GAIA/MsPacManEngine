@@ -27,7 +27,8 @@ public abstract class Input {
 	}
 	
 	/**
-	 * Obtains the required variables from the game and stores them as attributes of the implementing subclasses.
+	 * Obtains the required variables from the game and 
+	 * stores them as attributes of the implementing subclasses.
 	 */
 	public abstract void parseInput();
 

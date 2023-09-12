@@ -56,7 +56,9 @@ public class Executor {
     private final Logger logger = LoggerFactory.getLogger(Executor.class);
 	private boolean pacmanPOvisual;
 	private boolean ghostsPOvisual;
-	private static String VERSION = "3.4.0(ICI 21-22 major improvements PO)";
+	private static String VERSION = "4.2.0(ICI 23-24 stable version)";
+	
+	private static int ERROR_LOG_LEVEL = 2; //0: no log, 1: error message, 2: error message + stack trace
 
     public static class Builder {
         private boolean pacmanPO = false;
@@ -74,7 +76,7 @@ public class Executor {
 		private boolean pacmanPOvisual;
 		private boolean ghostsPOvisual;
 		
-
+		
         public Builder setPacmanPO(boolean po) {
             this.pacmanPO = po;
             return this;
@@ -172,7 +174,7 @@ public class Executor {
             Function<Game, String> peek,
             boolean pacmanPOvisual,
             boolean ghostsPOvisual
-            ) {
+        ) {
         this.pacmanPO = pacmanPO;
         this.ghostPO = ghostPO;
         this.ghostsMessage = ghostsMessage;
@@ -370,6 +372,49 @@ public class Executor {
         
         return game.getScore();
     }
+    
+    /**
+     * Run a game in asynchronous mode: the game waits until a move is returned. In order to slow thing down in case
+     * the controllers return very quickly, a time limit can be used. If fasted gameplay is required, this delay
+     * should be put as 0.
+     *
+     * @param pacManController The Pac-Man controller
+     * @param ghostController  The Ghosts controller
+     * @param delay            The delay between time-steps
+     */
+    public int runGame(Controller<MOVE> pacManController, GhostController ghostController, int delay, String title) {
+        Game game = setupGame();
+
+        precompute(pacManController, ghostController);
+        
+        GameView gv = (visuals) ? setupGameView(pacManController, game, title) : null;
+
+        GhostController ghostControllerCopy = ghostController.copy(ghostPO);
+
+        while (!game.gameOver()) {
+            if (tickLimit != -1 && tickLimit < game.getTotalTime()) {
+                break;
+            }
+            handlePeek(game);
+            game.advanceGame(
+                    pacManController.getMove(getPacmanCopy(game), System.currentTimeMillis() + timeLimit),
+                    ghostControllerCopy.getMove(getGhostsCopy(game), System.currentTimeMillis() + timeLimit));
+
+            try {
+                Thread.sleep(delay);
+            } catch (Exception e) {
+            }
+
+            if (visuals) {
+                gv.repaint();
+            }
+        }
+        System.out.println(game.getScore());
+        
+        postcompute(pacManController, ghostController);
+        
+        return game.getScore();
+    }
 
     private void postcompute(Controller<MOVE> pacManController, GhostController ghostController) {
 		pacManController.postCompute();
@@ -379,9 +424,13 @@ public class Executor {
 	private void precompute(Controller<MOVE> pacManController, GhostController ghostController) {
 		String ghostName = ghostController.getClass().getCanonicalName();
 		String pacManName = pacManController.getClass().getCanonicalName();
-		
+		System.out.print("Precompute "+ghostName);
 		pacManController.preCompute(ghostName);
+		System.out.println(" ...done");
+		System.out.print("Precompute "+pacManName);
 		ghostController.preCompute(pacManName);
+		System.out.println(" ...done");
+
 	}
 
 	private Game getPacmanCopy(Game game) {
@@ -397,7 +446,7 @@ public class Executor {
         GameView gv;
         gv = new GameView(game, setDaemon);
         gv.setScaleFactor(scaleFactor);
-        gv.showGame();
+        gv.showGame("");
         if(pacmanPOvisual) gv.setPacManPO(this.pacmanPO);
         if(ghostsPOvisual) gv.setGhostPO(this.ghostPO);
         if (pacManController instanceof HumanController) {
@@ -413,6 +462,27 @@ public class Executor {
         return gv;
     }
 
+    private GameView setupGameView(Controller<MOVE> pacManController, Game game, String title) {
+        GameView gv;
+        gv = new GameView(game, setDaemon);
+        gv.setScaleFactor(scaleFactor);
+        gv.showGame(title);
+        if(pacmanPOvisual) gv.setPacManPO(this.pacmanPO);
+        if(ghostsPOvisual) gv.setGhostPO(this.ghostPO);
+        if (pacManController instanceof HumanController) {
+            gv.setFocusable(true);
+            gv.requestFocus();
+            gv.setPacManPO(this.pacmanPO);
+            gv.addKeyListener(((HumanController) pacManController).getKeyboardInput());
+        }
+
+        if (pacManController instanceof Drawable) {
+            gv.addDrawable((Drawable) pacManController);
+        }
+        return gv;
+    }   
+    
+    
     /**
      * Run the game with time limit (asynchronous mode).
      * Can be played with and without visual display of game states.
@@ -522,6 +592,69 @@ public class Executor {
 
         return stats;
     }
+    
+    
+    /**
+     * Run the game in asynchronous mode but proceed as soon as both controllers replied. The time limit still applies so
+     * so the game will proceed after 40ms regardless of whether the controllers managed to calculate a turn.
+     *
+     * @param pacManController The Pac-Man controller
+     * @param ghostController  The Ghosts controller
+     * @param fixedTime        Whether or not to wait until 40ms are up even if both controllers already responded
+     * @param desc             the description for the stats
+     * @return Stat score achieved by Ms. Pac-Man
+     */
+    public Stats runGameTimeFixed(Controller<MOVE> pacManController, GhostController ghostController, int time, String desc) {
+        Game game = setupGame();
+
+        GameView gv = (visuals) ? setupGameView(pacManController, game) : null;
+        GhostController ghostControllerCopy = ghostController.copy(ghostPO);
+        Stats stats = new Stats(desc);
+
+        precompute(pacManController, ghostController);
+        
+        long gDELAY = time;
+        long gINTERVAL_WAIT = gDELAY / 10;
+        
+        new Thread(pacManController).start();
+        new Thread(ghostControllerCopy).start();
+        while (!game.gameOver()) {
+            if (tickLimit != -1 && tickLimit < game.getTotalTime()) {
+                break;
+            }
+            handlePeek(game);
+            pacManController.update(getPacmanCopy(game), System.currentTimeMillis() + DELAY);
+            ghostControllerCopy.update(getGhostsCopy(game), System.currentTimeMillis() + DELAY);
+
+            try {
+                long waited = gDELAY / gINTERVAL_WAIT;
+
+                for (int j = 0; j < gDELAY / gINTERVAL_WAIT; j++) {
+                    Thread.sleep(gINTERVAL_WAIT);
+
+                    if (pacManController.hasComputed() && ghostControllerCopy.hasComputed()) {
+                        waited = j;
+                        break;
+                    }
+                }
+                game.advanceGame(pacManController.getMove(), ghostControllerCopy.getMove());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            if (visuals) {
+                gv.repaint();
+            }
+        }
+
+        pacManController.terminate();
+        ghostControllerCopy.terminate();
+        stats.add(game.getScore());
+        
+        postcompute(pacManController, ghostController);
+
+        return stats;
+    }
 
     /**
      * Run a game in asynchronous mode and recorded.
@@ -545,7 +678,7 @@ public class Executor {
         if (visuals) {
             gv = new GameView(game, setDaemon);
             gv.setScaleFactor(scaleFactor);
-            gv.showGame();
+            gv.showGame("");
 
             if (pacManController instanceof HumanController) {
                 gv.getFrame().addKeyListener(((HumanController) pacManController).getKeyboardInput());
@@ -609,7 +742,7 @@ public class Executor {
         if (visual) {
             gv = new GameView(game, setDaemon);
             gv.setScaleFactor(scaleFactor);
-            gv.showGame();
+            gv.showGame("");
         }
 
         for (int j = 0; j < timeSteps.size(); j++) {
@@ -676,5 +809,66 @@ public class Executor {
         postcompute(pacManController, ghostController);
         
         return game.getScore();
+    }
+    
+    /**
+     * Run a game in asynchronous mode and notifies observer: the game waits until a move is returned. In order to slow thing down in case
+     * the controllers return very quickly, a time limit can be used. If fasted gameplay is required, this delay
+     * should be put as 0.
+     *
+     * @param pacManController The Pac-Man controller
+     * @param ghostController  The Ghosts controller
+     * @param delay            The delay between time-steps
+     */
+    public int runGame(Controller<MOVE> pacManController, GhostController ghostController, int delay, GameObserver observer, String title) {
+        Game game = setupGame();
+
+        precompute(pacManController, ghostController);
+        
+        GameView gv = (visuals) ? setupGameView(pacManController, game, title) : null;
+
+        GhostController ghostControllerCopy = ghostController.copy(ghostPO);
+
+        while (!game.gameOver()) {
+            if (tickLimit != -1 && tickLimit < game.getTotalTime()) {
+                break;
+            }
+            handlePeek(game);
+            MOVE pacManMove = pacManController.getMove(getPacmanCopy(game), System.currentTimeMillis() + timeLimit);
+            EnumMap<GHOST,MOVE> ghostsMove = ghostControllerCopy.getMove(getGhostsCopy(game), System.currentTimeMillis() + timeLimit);
+            
+            EnumMap<GHOST,Boolean> ghostsJunction = new EnumMap<GHOST,Boolean>(GHOST.class);
+            for(GHOST g: GHOST.values())
+            	ghostsJunction.put(g, game.isJunction(game.getGhostCurrentNodeIndex(g)));
+            observer.ghostsMove(ghostsMove, ghostsJunction);
+            
+            observer.pacManMove(pacManMove, game.isJunction(game.getPacmanCurrentNodeIndex()));
+            
+            game.advanceGame(pacManMove, ghostsMove);
+
+            try {
+                Thread.sleep(delay);
+            } catch (Exception e) {
+            }
+
+            if (visuals) {
+                gv.repaint();
+            }
+        }
+        System.out.println(game.getScore());
+        
+        postcompute(pacManController, ghostController);
+        
+        return game.getScore();
+    }
+    
+    public static void logError(String msg, Exception e)
+    {
+    	if(Executor.ERROR_LOG_LEVEL<0)
+    		System.err.println(msg);
+    	if(Executor.ERROR_LOG_LEVEL<1)
+    		e.printStackTrace(System.err);
+    	
+    	
     }
 }

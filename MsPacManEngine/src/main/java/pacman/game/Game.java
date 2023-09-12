@@ -27,6 +27,7 @@ import java.util.Random;
 
 import org.bouncycastle.util.Arrays;
 
+import pacman.Executor;
 import pacman.game.Constants.DM;
 import pacman.game.Constants.GHOST;
 import pacman.game.Constants.MOVE;
@@ -879,8 +880,7 @@ public final class Game {
 			    }
 			}
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			Executor.logError("ERROR. correctPacManDir()", e);
 		}
         return MOVE.NEUTRAL;
     }
@@ -1658,8 +1658,7 @@ public final class Game {
         try {
 			return Arrays.clone(currentMaze.graph[nodeIndex].allNeighbouringNodes.get(lastModeMade));
 		} catch (Exception e) {
-			System.err.println(String.format("Error getNeighbouringNodes(nodeIndex: %s, lastMoveMade: %s)",nodeIndex, lastModeMade));// TODO Auto-generated catch block
-			e.printStackTrace();
+			Executor.logError(String.format("Error getNeighbouringNodes(nodeIndex: %s, lastMoveMade: %s)",nodeIndex, lastModeMade), e);
 		}
         return new int[0];
     }
@@ -1724,8 +1723,7 @@ public final class Game {
 			    return currentMaze.shortestPathDistances[((fromNodeIndex * (fromNodeIndex + 1)) / 2) + toNodeIndex];
 			}
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+        	Executor.logError("ERROR getShortestPathDistance(). No path from node "+fromNodeIndex+" to node "+ toNodeIndex + e.getMessage(),e);
 		}
         return 0 ;
     }
@@ -1744,7 +1742,7 @@ public final class Game {
     	}
     	catch(Exception e)
         {
-        	System.err.println(e);
+        	Executor.logError("ERROR getEuclideanDistance(). No path from node "+fromNodeIndex+" to node "+ toNodeIndex + e.getMessage(),e);
         }
         return 0;
     }
@@ -1954,7 +1952,8 @@ public final class Game {
         }
         }catch(Exception e)
         {
-        	System.err.println(e.getMessage());
+        	Executor.logError("Error: getApproximateNextMoveTowardsTarget. From "+fromNodeIndex+" to "+toNodeIndex+" :"+e.getMessage(),e);
+        	//e.printStackTrace();
         }
 
         return move;
@@ -1985,7 +1984,7 @@ public final class Game {
 	            }
 	        }
         } catch(Exception e) {
-        	System.err.println(e.getMessage());
+        	Executor.logError("Error: getApproximateNextMoveAwayFromTarget. From "+fromNodeIndex+" to "+toNodeIndex+" :"+e.getMessage(),e);
         }
 
         return move;

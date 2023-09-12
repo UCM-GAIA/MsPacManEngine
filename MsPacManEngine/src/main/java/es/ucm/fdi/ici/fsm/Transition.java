@@ -15,3 +15,5 @@ public interface Transition {
 	public boolean evaluate(Input in);
 	
 }
+
+

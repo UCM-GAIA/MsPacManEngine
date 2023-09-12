@@ -77,7 +77,7 @@ public class FuzzyEngine extends FuzzyEngineObservable{
 				this.notifyActionFired(action.toString(), input, output);
 			} catch (Exception e) {
 				System.err.println("Error executing action "+ action.getClass().getCanonicalName().toString());
-				//e.printStackTrace();
+				e.printStackTrace();
 			}
 		
 		} catch (Exception e1) {
@@ -95,8 +95,12 @@ public class FuzzyEngine extends FuzzyEngineObservable{
 	public Collection<String> debugRules(String rules)
 	{
 		Vector<String> debugRules = new Vector<String>();
-		for( Rule r : fis.getFunctionBlock(fuzzyBlock).getFuzzyRuleBlock(rules).getRules() )
-		      debugRules.add(r.toString());
+		try {
+			for( Rule r : fis.getFunctionBlock(fuzzyBlock).getFuzzyRuleBlock(rules).getRules() )
+			      debugRules.add(r.toString());
+		} catch (Exception e) {
+			//
+		}
 		return debugRules;
 	}
 	

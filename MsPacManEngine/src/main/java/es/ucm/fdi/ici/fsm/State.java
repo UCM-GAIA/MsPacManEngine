@@ -12,7 +12,8 @@ import pacman.game.Constants.MOVE;
 public interface State {
 
 	/**
-	 * Executes the corresponding action according to the input variables, and over the Game object also contained in the Input parameter.
+	 * Executes the corresponding action according to the input variables, 
+	 * and over the Game object also contained in the Input parameter.
 	 */
 	public MOVE execute(Input input);
 
@@ -22,3 +23,7 @@ public interface State {
 	 */
 	public void stop();
 }
+
+
+
+

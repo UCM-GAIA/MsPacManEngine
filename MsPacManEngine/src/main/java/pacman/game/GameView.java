@@ -583,8 +583,9 @@ public final class GameView extends JComponent {
      *
      * @return the game view
      */
-    public GameView showGame() {
+    public GameView showGame(String title) {
         this.frame = new GameFrame(this);
+        this.frame.setTitle(title);
 
         //just wait for a bit for player to be ready
         try {
